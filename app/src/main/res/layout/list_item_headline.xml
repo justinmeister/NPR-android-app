@@ -7,7 +7,7 @@
         android:layout_height="wrap_content"
         android:layout_marginLeft="16dp"
         android:layout_marginRight="16dp"
-        android:padding="16dp"
-        android:textSize="16sp"/>
+        android:padding="18dp"
+        android:textSize="18sp"/>
 
 </LinearLayout>

@@ -23,6 +23,7 @@ public class HeadlineListFragment extends ListFragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        setRetainInstance(true);
         getActivity().setTitle(R.string.headline_title);
         if (savedInstanceState == null) {
             new FetchItemsTask().execute();
