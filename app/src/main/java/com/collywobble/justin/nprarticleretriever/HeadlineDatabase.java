@@ -3,18 +3,30 @@ package com.collywobble.justin.nprarticleretriever;
 
 import android.content.Context;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 
 public class HeadlineDatabase {
+    private String mRawStringData;
     private ArrayList<String> mHeadlineList;
-
     private static HeadlineDatabase sHeadlines;
     private Context mAppContext;
 
-    private HeadlineDatabase(Context appContext) {
-        mAppContext = appContext;
-        mHeadlineList = makeHeadlines();
 
+    public String getRawStringData() {
+        return mRawStringData;
+    }
+
+    public void setRawStringData(String rawStringData) {
+        this.mRawStringData = rawStringData;
+    }
+
+
+    public HeadlineDatabase(Context appContext) {
+        mAppContext = appContext;
     }
 
     private ArrayList<String> makeHeadlines() {
@@ -26,12 +38,6 @@ public class HeadlineDatabase {
         return newList;
     }
 
-    public static HeadlineDatabase get(Context c) {
-        if (sHeadlines == null) {
-            sHeadlines = new HeadlineDatabase(c.getApplicationContext());
-        }
-        return sHeadlines;
-    }
 
     public ArrayList<String> getHeadlineList() {
         return mHeadlineList;
@@ -39,7 +45,25 @@ public class HeadlineDatabase {
 
     public String getHeadline(int pos) {
         return mHeadlineList.get(pos);
+    }
 
+
+    public ArrayList<String> getHeadlineStringArray() {
+        ArrayList<String> headlines = new ArrayList<String>();
+        try {
+            JSONArray storyJsonArray = new JSONObject(mRawStringData)
+                    .getJSONObject("list")
+                    .getJSONArray("story");
+            for (int i = 0; i < storyJsonArray.length(); i++) {
+                try {
+                    JSONObject newStory = storyJsonArray.getJSONObject(i).getJSONObject("title");
+                    headlines.add(newStory.getString("$text"));
+                } catch (JSONException je) {}
+
+            }
+        } catch(JSONException je) {}
+
+        return headlines;
     }
 
 }
