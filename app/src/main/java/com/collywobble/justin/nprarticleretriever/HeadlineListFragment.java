@@ -1,7 +1,11 @@
 package com.collywobble.justin.nprarticleretriever;
 
+import android.annotation.TargetApi;
+import android.app.ActivityOptions;
 import android.app.ListFragment;
+import android.content.Intent;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -15,7 +19,8 @@ import java.util.ArrayList;
 public class HeadlineListFragment extends ListFragment {
 
     private String mRequestUrl = makeRequestUrl(20, 1007);
-    private ArrayList<String> mHeadlines = new ArrayList<String>();
+    private ArrayList<Headline> mHeadlines;
+    private ArrayList<String> mIds;
     private static final String TAG = "HeadlineListFragment";
     private HeadlineDatabase mHeadlineDatabase = new HeadlineDatabase(getActivity());
     private static final String DATA = "data";
@@ -25,22 +30,9 @@ public class HeadlineListFragment extends ListFragment {
         super.onCreate(savedInstanceState);
         setRetainInstance(true);
         getActivity().setTitle(R.string.headline_title);
-        if (savedInstanceState == null) {
-            new FetchItemsTask().execute();
-        } else {
-            mHeadlines = savedInstanceState.getStringArrayList(DATA);
-            setupAdapter();
-        }
-
+        new FetchItemsTask().execute();
     }
 
-    @Override
-    public void onSaveInstanceState(Bundle savedInstanceState) {
-        super.onSaveInstanceState(savedInstanceState);
-        if (mHeadlines != null) {
-            savedInstanceState.putStringArrayList(DATA, mHeadlines);
-        }
-    }
 
     private String makeRequestUrl(int numOfItems, int topicIdint) {
         String nprUrl = "http://api.npr.org/query?apiKey=";
@@ -53,7 +45,7 @@ public class HeadlineListFragment extends ListFragment {
     }
 
     private void setupAdapter() {
-        ArrayAdapter<String> adapter = new HeadlineAdapter(mHeadlines);
+        ArrayAdapter<Headline> adapter = new HeadlineAdapter(mHeadlines);
         setListAdapter(adapter);
     }
 
@@ -73,16 +65,16 @@ public class HeadlineListFragment extends ListFragment {
         @Override
         protected void onPostExecute(String rawStringData) {
             mHeadlineDatabase.setRawStringData(rawStringData);
-            mHeadlines = mHeadlineDatabase.getHeadlineStringArray();
+            mHeadlines = mHeadlineDatabase.getHeadlineObjects();
             setupAdapter();
         }
     }
 
-    private class HeadlineAdapter extends ArrayAdapter<String> {
-        public HeadlineAdapter(ArrayList<String> headlines) {
+    private class HeadlineAdapter extends ArrayAdapter<Headline> {
+        public HeadlineAdapter(ArrayList<Headline> headlines) {
             super(getActivity(), 0, headlines);
         }
-
+        @TargetApi(16)
         @Override
         public View getView(int position, View convertView, ViewGroup parent) {
             if (convertView == null) {
@@ -90,11 +82,27 @@ public class HeadlineListFragment extends ListFragment {
                         .inflate(R.layout.list_item_headline, null);
             }
 
-            String currentHeadline = getItem(position);
+            final Headline currentHeadline = getItem(position);
 
             TextView headlineTextView =
                     (TextView)convertView.findViewById(R.id.headline_text_view);
-            headlineTextView.setText(currentHeadline);
+            headlineTextView.setText(currentHeadline.getHeadline());
+            headlineTextView.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View view) {
+                    Intent i = new Intent(getActivity(), ArticleActivity.class);
+                    i.putExtra(articleFragment.STORY_ID, currentHeadline.getStoryId());
+
+                    if (Build.VERSION.SDK_INT >= 16) {
+                        Bundle translateBundle =
+                                ActivityOptions.makeCustomAnimation(getActivity(),
+                                        R.anim.slide_in_left, R.anim.slide_out_left).toBundle();
+                        startActivity(i, translateBundle);
+                    } else {
+                        startActivity(i);
+                    }
+                }
+            });
 
             return convertView;
         }
